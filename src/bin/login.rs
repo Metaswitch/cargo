@@ -17,6 +17,7 @@ pub struct Options {
     flag_locked: bool,
     #[serde(rename = "flag_Z")]
     flag_z: Vec<String>,
+    flag_registry: Option<String>,
 }
 
 pub const USAGE: &'static str = "
@@ -34,6 +35,7 @@ Options:
     --frozen                 Require Cargo.lock and cache are up to date
     --locked                 Require Cargo.lock is up to date
     -Z FLAG ...              Unstable (nightly-only) flags to Cargo
+    --registry REGISTRY      Registry to use
 
 ";
 
@@ -66,6 +68,6 @@ pub fn execute(options: Options, config: &mut Config) -> CliResult {
         }
     };
 
-    ops::registry_login(config, token, options.flag_host)?;
+    ops::registry_login(config, token, options.flag_registry)?;
     Ok(())
 }

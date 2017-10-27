@@ -886,7 +886,7 @@ fn walk_tree<F>(pwd: &Path, mut walk: F) -> CargoResult<()>
 
 pub fn save_credentials(cfg: &Config,
                         token: String,
-                        host: Option<String>) -> CargoResult<()> {
+                        registry: Option<String>) -> CargoResult<()> {
     let mut file = {
         cfg.home_path.create_dir()?;
         cfg.home_path.open_rw(Path::new("credentials"), cfg,
@@ -897,10 +897,10 @@ pub fn save_credentials(cfg: &Config,
         let key = "token".to_string();
         let value = ConfigValue::String(token, file.path().to_path_buf());
 
-        if let Some(host) = host {
+        if let Some(registry) = registry {
             let mut map = HashMap::new();
             map.insert(key, value);
-            (host, CV::Table(map, file.path().to_path_buf()))
+            (registry, CV::Table(map, file.path().to_path_buf()))
         } else {
             (key, value)
         }
