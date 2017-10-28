@@ -36,6 +36,7 @@ pub struct PublishOpts<'cfg> {
     pub jobs: Option<u32>,
     pub target: Option<&'cfg str>,
     pub dry_run: bool,
+    pub registry: Option<String>,
 }
 
 pub fn publish(ws: &Workspace, opts: &PublishOpts) -> CargoResult<()> {
@@ -51,7 +52,8 @@ pub fn publish(ws: &Workspace, opts: &PublishOpts) -> CargoResult<()> {
 
     let (mut registry, reg_id) = registry(opts.config,
                                           opts.token.clone(),
-                                          opts.index.clone())?;
+                                          opts.index.clone(),
+                                          opts.registry.clone())?;
     verify_dependencies(pkg, &reg_id)?;
 
     // Prepare a tarball, with a non-surpressable warning if metadata
@@ -227,12 +229,13 @@ pub fn registry_configuration(config: &Config,
 
 pub fn registry(config: &Config,
                 token: Option<String>,
-                index: Option<String>) -> CargoResult<(Registry, SourceId)> {
+                index: Option<String>,
+                registry: Option<String>) -> CargoResult<(Registry, SourceId)> {
     // Parse all configuration options
     let RegistryConfig {
         token: token_config,
         index: _index_config,
-    } = registry_configuration(config, index.clone())?;
+    } = registry_configuration(config, registry.clone())?;
     let token = token.or(token_config);
     let sid = match index {
         Some(index) => SourceId::for_registry(&index.to_url()?)?,
@@ -347,6 +350,7 @@ pub struct OwnersOptions {
     pub to_add: Option<Vec<String>>,
     pub to_remove: Option<Vec<String>>,
     pub list: bool,
+    pub registry: Option<String>,
 }
 
 pub fn modify_owners(config: &Config, opts: &OwnersOptions) -> CargoResult<()> {
@@ -359,8 +363,10 @@ pub fn modify_owners(config: &Config, opts: &OwnersOptions) -> CargoResult<()> {
         }
     };
 
-    let (mut registry, _) = registry(config, opts.token.clone(),
-                                          opts.index.clone())?;
+    let (mut registry, _) = registry(config,
+                                     opts.token.clone(),
+                                     opts.index.clone(),
+                                     opts.registry.clone())?;
 
     if let Some(ref v) = opts.to_add {
         let v = v.iter().map(|s| &s[..]).collect::<Vec<_>>();
@@ -403,7 +409,8 @@ pub fn yank(config: &Config,
             version: Option<String>,
             token: Option<String>,
             index: Option<String>,
-            undo: bool) -> CargoResult<()> {
+            undo: bool,
+            reg: Option<String>) -> CargoResult<()> {
     let name = match krate {
         Some(name) => name,
         None => {
@@ -417,7 +424,7 @@ pub fn yank(config: &Config,
         None => bail!("a version must be specified to yank")
     };
 
-    let (mut registry, _) = registry(config, token, index)?;
+    let (mut registry, _) = registry(config, token, index, reg)?;
 
     if undo {
         config.shell().status("Unyank", format!("{}:{}", name, version))?;
@@ -437,7 +444,8 @@ pub fn yank(config: &Config,
 pub fn search(query: &str,
               config: &Config,
               index: Option<String>,
-              limit: u8) -> CargoResult<()> {
+              limit: u8,
+              reg: Option<String>) -> CargoResult<()> {
     fn truncate_with_ellipsis(s: &str, max_length: usize) -> String {
         if s.len() < max_length {
             s.to_string()
@@ -446,7 +454,7 @@ pub fn search(query: &str,
         }
     }
 
-    let (mut registry, _) = registry(config, None, index)?;
+    let (mut registry, _) = registry(config, None, index, reg)?;
     let (crates, total_crates) = registry.search(query, limit).map_err(|e| {
         CargoError::from(format!("failed to retrieve search results from the registry: {}", e))
     })?;
