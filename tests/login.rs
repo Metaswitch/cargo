@@ -46,38 +46,33 @@ fn check_token(expected_token: &str, registry: Option<&str>) -> bool {
     File::open(&credentials).unwrap().read_to_string(&mut contents).unwrap();
     let toml: toml::Value = contents.parse().unwrap();
 
-    if let Some(registry) = registry {
-        if let toml::Value::Table(table) = toml {
-            if let Some(table) = table.get(registry) {
-                match table {
-                    &toml::Value::Table(ref table) => match table.get("token") {
-                        Some(v) => match v {
-                            &toml::Value::String(ref token) => (token.as_str() == expected_token),
-                            _ => false,
-                        },
-                        None => false,
-                    },
-                    _ => false,
+    let token = match (registry, toml) {
+        // A registry has been provided, so check that the token exists in a
+        // table for the registry.
+        (Some(registry), toml::Value::Table(table)) => {
+            table.get(registry).and_then(|registry_table| {
+                match registry_table.get("token") {
+                    Some(&toml::Value::String(ref token)) => Some(token.as_str().to_string()),
+                    _ => None,
                 }
-            } else {
-                false
-            }
-        } else {
-            false
+            })
+        },
+        // There is no registry provided, so check the global token instead.
+        (None, toml::Value::Table(table)) => {
+            table.get("token").and_then(|v| {
+                match v {
+                    &toml::Value::String(ref token) => Some(token.as_str().to_string()),
+                    _ => None,
+                }
+            })
         }
+        _ => None
+    };
+
+    if let Some(token_val) = token {
+        token_val == expected_token
     } else {
-        match toml {
-            toml::Value::Table(table) => match table.get("token") {
-                Some(v) => match v {
-                    &toml::Value::String(ref token) => {
-                        (token.as_str() == expected_token)
-                    }
-                    _ => false,
-                },
-                None => false,
-            },
-            _ => false,
-        }
+        false
     }
 }
 
