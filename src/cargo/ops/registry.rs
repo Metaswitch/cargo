@@ -198,6 +198,10 @@ pub fn registry_configuration(config: &Config,
         Some(registry) => {
             let index = config.get_string(&format!("registries.{}.index", registry))?;
 
+            if index.is_none() {
+                return Err(format!("No index found for registry: `{}`", registry).into())
+            }
+
             let table = config.get_table(&format!("registry.{}", registry))?.map(|t| t.val);
             let token = if let Some(table) = table {
                 if let Some(&ConfigValue::String(ref i, ref path)) = table.get("token".into()) {
@@ -234,12 +238,12 @@ pub fn registry(config: &Config,
     // Parse all configuration options
     let RegistryConfig {
         token: token_config,
-        index: _index_config,
+        index: index_config,
     } = registry_configuration(config, registry.clone())?;
     let token = token.or(token_config);
-    let sid = match index {
-        Some(index) => SourceId::for_registry(&index.to_url()?)?,
-        None => SourceId::crates_io(config)?,
+    let sid = match (index_config, index) {
+        (Some(index), _) | (None, Some(index)) => SourceId::for_registry(&index.to_url()?)?,
+        (None, None) => SourceId::crates_io(config)?,
     };
     let api_host = {
         let mut src = RegistrySource::remote(&sid, config);
