@@ -4,7 +4,7 @@ use std::io;
 use cargo::ops;
 use cargo::core::{SourceId, Source};
 use cargo::sources::RegistrySource;
-use cargo::util::{CliResult, CargoResultExt, Config};
+use cargo::util::{CargoError, CliResult, CargoResultExt, Config};
 
 #[derive(Deserialize)]
 pub struct Options {
@@ -49,13 +49,20 @@ pub fn execute(options: Options, config: &mut Config) -> CliResult {
     let token = match options.arg_token {
         Some(token) => token,
         None => {
-            let host = match options.flag_host {
-                Some(ref host) => host.clone(),
+            let host = match options.flag_registry {
+                Some(ref registry) => {
+                    let index = config.get_string(&format!("registries.{}.index", registry))?;
+                    match index {
+                        Some(index) => index.val,
+                        None => return Err(CargoError::from(format!("No index found for registry: `{}`", registry)).into()),
+                    }
+                }
                 None => {
                     let src = SourceId::crates_io(config)?;
                     let mut src = RegistrySource::remote(&src, config);
                     src.update()?;
-                    src.config()?.unwrap().api.unwrap()
+                    let config = src.config()?.unwrap();
+                    options.flag_host.clone().unwrap_or(config.api.unwrap())
                 }
             };
             println!("please visit {}me and paste the API Token below", host);
