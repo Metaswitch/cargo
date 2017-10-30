@@ -17,6 +17,7 @@ pub struct Options {
     flag_locked: bool,
     #[serde(rename = "flag_Z")]
     flag_z: Vec<String>,
+    flag_registry: Option<String>,
 }
 
 pub const USAGE: &'static str = "
@@ -34,6 +35,7 @@ Options:
     --frozen                 Require Cargo.lock and cache are up to date
     --locked                 Require Cargo.lock is up to date
     -Z FLAG ...              Unstable (nightly-only) flags to Cargo
+    --registry REGISTRY      Registry to use
 
 ";
 
@@ -44,26 +46,31 @@ pub fn execute(options: Options, config: &mut Config) -> CliResult {
                      options.flag_frozen,
                      options.flag_locked,
                      &options.flag_z)?;
-    let token = match options.arg_token.clone() {
+    let token = match options.arg_token {
         Some(token) => token,
         None => {
-            let src = SourceId::crates_io(config)?;
-            let mut src = RegistrySource::remote(&src, config);
-            src.update()?;
-            let config = src.config()?.unwrap();
-            let host = options.flag_host.clone().unwrap_or(config.api.unwrap());
+            let host = match options.flag_registry {
+                Some(ref registry) => {
+                    config.get_registry_index(registry)?
+                }
+                None => {
+                    let src = SourceId::crates_io(config)?;
+                    let mut src = RegistrySource::remote(&src, config);
+                    src.update()?;
+                    let config = src.config()?.unwrap();
+                    options.flag_host.clone().unwrap_or(config.api.unwrap())
+                }
+            };
             println!("please visit {}me and paste the API Token below", host);
             let mut line = String::new();
             let input = io::stdin();
             input.lock().read_line(&mut line).chain_err(|| {
                 "failed to read stdin"
             })?;
-            line
+            line.trim().to_string()
         }
     };
 
-    let token = token.trim().to_string();
-    ops::registry_login(config, token)?;
+    ops::registry_login(config, token, options.flag_registry)?;
     Ok(())
 }
-
