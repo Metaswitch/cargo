@@ -545,6 +545,14 @@ impl Config {
         }
     }
 
+    /// Gets the index for a registry.
+    pub fn get_registry_index(&self, registry: &str) -> CargoResult<String> {
+        Ok(match self.get_string(&format!("registries.{}.index", registry))? {
+            Some(index) => index.val,
+            None => return Err(CargoError::from(format!("No index found for registry: `{}`", registry)).into()),
+        })
+    }
+
     /// Loads credentials config from the credentials file into the ConfigValue object, if present.
     fn load_credentials(&self, cfg: &mut ConfigValue) -> CargoResult<()> {
         let home_path = self.home_path.clone().into_path_unlocked();

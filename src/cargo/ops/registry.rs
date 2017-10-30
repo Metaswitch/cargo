@@ -16,7 +16,7 @@ use core::dependency::Kind;
 use core::manifest::ManifestMetadata;
 use ops;
 use sources::{RegistrySource};
-use util::config::{self, Config, ConfigValue, Definition, Value};
+use util::config::{self, Config, ConfigValue};
 use util::paths;
 use util::ToUrl;
 use util::errors::{CargoError, CargoResult, CargoResultExt};
@@ -196,38 +196,27 @@ pub fn registry_configuration(config: &Config,
 
     let (index, token) = match registry {
         Some(registry) => {
-            let index = config.get_string(&format!("registries.{}.index", registry))?;
-
-            if index.is_none() {
-                return Err(format!("No index found for registry: `{}`", registry).into())
-            }
-
+            let index = Some(config.get_registry_index(&registry)?);
             let table = config.get_table(&format!("registry.{}", registry))?.map(|t| t.val);
-            let token = if let Some(table) = table {
-                if let Some(&ConfigValue::String(ref i, ref path)) = table.get("token".into()) {
-                    Some(Value {
-                        val: i.to_string(),
-                        definition: Definition::Path(path.clone()),
-                    })
-                } else {
-                    None
+            let token = table.and_then(|table| {
+                match table.get("token".into()) {
+                    Some(&ConfigValue::String(ref i, _)) => Some(i.to_string()),
+                    _ => None,
                 }
-            } else {
-                None
-            };
+            });
 
             (index, token)
         }
         None => {
             // Checking out for default index and token
-            (config.get_string("registry.index")?,
-             config.get_string("registry.token")?)
+            (config.get_string("registry.index")?.map(|p| p.val),
+             config.get_string("registry.token")?.map(|p| p.val))
         }
     };
 
     Ok(RegistryConfig {
-        index: index.map(|p| p.val),
-        token: token.map(|p| p.val)
+        index: index,
+        token: token
     })
 }
 

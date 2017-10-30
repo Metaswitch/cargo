@@ -36,7 +36,7 @@ Options:
     --frozen            Require Cargo.lock and cache are up to date
     --locked            Require Cargo.lock is up to date
     -Z FLAG ...         Unstable (nightly-only) flags to Cargo
-    --registry REGISTRY      Registry to use
+    --registry REGISTRY Registry to use
 
 The yank command removes a previously pushed crate's version from the server's
 index. This command does not delete any data, and the crate will still be

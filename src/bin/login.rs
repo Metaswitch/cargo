@@ -4,7 +4,7 @@ use std::io;
 use cargo::ops;
 use cargo::core::{SourceId, Source};
 use cargo::sources::RegistrySource;
-use cargo::util::{CargoError, CliResult, CargoResultExt, Config};
+use cargo::util::{CliResult, CargoResultExt, Config};
 
 #[derive(Deserialize)]
 pub struct Options {
@@ -51,11 +51,7 @@ pub fn execute(options: Options, config: &mut Config) -> CliResult {
         None => {
             let host = match options.flag_registry {
                 Some(ref registry) => {
-                    let index = config.get_string(&format!("registries.{}.index", registry))?;
-                    match index {
-                        Some(index) => index.val,
-                        None => return Err(CargoError::from(format!("No index found for registry: `{}`", registry)).into()),
-                    }
+                    config.get_registry_index(registry)?
                 }
                 None => {
                     let src = SourceId::crates_io(config)?;
