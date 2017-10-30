@@ -20,6 +20,12 @@ const ORIGINAL_TOKEN: &str = "api-token";
 const CONFIG_FILE: &str = r#"
     [registry]
     token = "api-token"
+
+    [registries.test-reg]
+    index = "dummy_index"
+
+    [registries.test.reg]
+    index = "dummy_index"
 "#;
 
 fn setup_old_credentials() {
