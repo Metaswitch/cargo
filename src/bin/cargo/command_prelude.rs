@@ -6,6 +6,7 @@ use cargo::CargoResult;
 use cargo::core::Workspace;
 use cargo::core::compiler::{BuildConfig, MessageFormat};
 use cargo::ops::{CompileFilter, CompileOptions, NewOptions, Packages, VersionControl};
+use cargo::sources::CRATES_IO_REGISTRY;
 use cargo::util::paths;
 use cargo::util::important_paths::find_root_manifest_for_wd;
 
@@ -337,21 +338,29 @@ pub trait ArgMatchesExt {
             self._is_present("lib"),
             self.value_of_path("path", config).unwrap(),
             self._value_of("name").map(|s| s.to_string()),
+            self.registry(config)?,
         )
     }
 
     fn registry(&self, config: &Config) -> CargoResult<Option<String>> {
         match self._value_of("registry") {
             Some(registry) => {
-                if !config.cli_unstable().unstable_options {
-                    return Err(format_err!(
-                        "registry option is an unstable feature and \
-                         requires -Zunstable-options to use."
-                    ));
+
+                if registry == CRATES_IO_REGISTRY {
+                    // If "crates.io" is specified then we just need to return None
+                    // as that will cause cargo to use crates.io. This is required
+                    // for the case where a default alterative registry is used
+                    // but the user wants to switch back to crates.io for a single
+                    // command.
+                    Ok(None)
                 }
-                Ok(Some(registry.to_string()))
+                else {
+                    Ok(Some(registry.to_string()))                    
+                }
             }
-            None => Ok(None),
+            None => {
+                config.default_registry()
+            }
         }
     }
 
