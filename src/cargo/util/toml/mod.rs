@@ -18,7 +18,7 @@ use core::profiles::Profiles;
 use core::{Dependency, Manifest, PackageId, Summary, Target};
 use core::{Edition, EitherManifest, Feature, Features, VirtualManifest};
 use core::{GitReference, PackageIdSpec, SourceId, WorkspaceConfig, WorkspaceRootConfig};
-use sources::CRATES_IO;
+use sources::{CRATES_IO_INDEX, CRATES_IO_REGISTRY};
 use util::errors::{CargoError, CargoResult, CargoResultExt};
 use util::paths;
 use util::{self, Config, ToUrl};
@@ -999,11 +999,6 @@ impl TomlManifest {
         let profiles = Profiles::new(me.profile.as_ref(), config, &features, &mut warnings)?;
         let publish = match project.publish {
             Some(VecStringOrBool::VecString(ref vecstring)) => {
-                features
-                    .require(Feature::alternative_registries())
-                    .chain_err(|| {
-                        "the `publish` manifest key is unstable for anything other than a value of true or false"
-                    })?;
                 Some(vecstring.clone())
             }
             Some(VecStringOrBool::Bool(false)) => Some(vec![]),
@@ -1140,7 +1135,7 @@ impl TomlManifest {
                 )
             })?;
             if spec.url().is_none() {
-                spec.set_url(CRATES_IO.parse().unwrap());
+                spec.set_url(CRATES_IO_INDEX.parse().unwrap());
             }
 
             let version_specified = match *replacement {
@@ -1175,7 +1170,7 @@ impl TomlManifest {
         let mut patch = HashMap::new();
         for (url, deps) in self.patch.iter().flat_map(|x| x) {
             let url = match &url[..] {
-                "crates-io" => CRATES_IO.parse().unwrap(),
+                CRATES_IO_REGISTRY => CRATES_IO_INDEX.parse().unwrap(),
                 _ => url.to_url()?,
             };
             patch.insert(
@@ -1285,7 +1280,6 @@ impl DetailedTomlDependency {
 
         let registry_id = match self.registry {
             Some(ref registry) => {
-                cx.features.require(Feature::alternative_registries())?;
                 SourceId::alt_registry(cx.config, registry)?
             }
             None => SourceId::crates_io(cx.config)?,
