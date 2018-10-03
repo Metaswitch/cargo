@@ -1,4 +1,4 @@
-#![cfg_attr(test, deny(warnings))]
+//#![cfg_attr(test, deny(warnings))]
 
 // Clippy isn't enforced by CI, and know that @alexcrichton isn't a fan :)
 #![cfg_attr(feature = "cargo-clippy", allow(boxed_local))]             // bug rust-lang-nursery/rust-clippy#1123
@@ -104,7 +104,7 @@ pub struct VersionInfo {
 
 impl fmt::Display for VersionInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "cargo {}.{}.{}", self.major, self.minor, self.patch)?;
+        write!(f, "cargo {}.{}.{} - Metaswitch alternative registries", self.major, self.minor, self.patch)?;
         if let Some(channel) = self.cfg_info.as_ref().map(|ci| &ci.release_channel) {
             if channel != "stable" {
                 write!(f, "-{}", channel)?;

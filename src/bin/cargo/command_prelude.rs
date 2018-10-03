@@ -343,12 +343,6 @@ pub trait ArgMatchesExt {
     fn registry(&self, config: &Config) -> CargoResult<Option<String>> {
         match self._value_of("registry") {
             Some(registry) => {
-                if !config.cli_unstable().unstable_options {
-                    return Err(format_err!(
-                        "registry option is an unstable feature and \
-                         requires -Zunstable-options to use."
-                    ));
-                }
                 Ok(Some(registry.to_string()))
             }
             None => Ok(None),

@@ -530,6 +530,7 @@ path = {}
 name = "{}"
 version = "0.1.0"
 authors = [{}]
+publish = []
 
 [dependencies]
 {}"#,

@@ -939,11 +939,6 @@ impl TomlManifest {
         let profiles = Profiles::new(me.profile.as_ref(), config, &features, &mut warnings)?;
         let publish = match project.publish {
             Some(VecStringOrBool::VecString(ref vecstring)) => {
-                features
-                    .require(Feature::alternative_registries())
-                    .chain_err(|| {
-                        "the `publish` manifest key is unstable for anything other than a value of true or false"
-                    })?;
                 Some(vecstring.clone())
             }
             Some(VecStringOrBool::Bool(false)) => Some(vec![]),
@@ -1221,7 +1216,6 @@ impl DetailedTomlDependency {
 
         let registry_id = match self.registry {
             Some(ref registry) => {
-                cx.features.require(Feature::alternative_registries())?;
                 SourceId::alt_registry(cx.config, registry)?
             }
             None => SourceId::crates_io(cx.config)?,
