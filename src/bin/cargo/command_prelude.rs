@@ -337,6 +337,7 @@ pub trait ArgMatchesExt {
             self._is_present("lib"),
             self.value_of_path("path", config).unwrap(),
             self._value_of("name").map(|s| s.to_string()),
+            self.registry(config)?,
         )
     }
 
