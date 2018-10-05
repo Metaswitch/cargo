@@ -88,6 +88,7 @@ rustflags = ["..", ".."]
 [registry]
 index = "..."   # URL of the registry index (defaults to the central repository)
 token = "..."   # Access token (found on the central repo’s website)
+default = "..." # Default alternative registry to use (can be overriden with --registry)
 
 [http]
 proxy = "host:port" # HTTP proxy to use for HTTP requests (defaults to none)
