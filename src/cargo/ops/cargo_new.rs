@@ -536,15 +536,18 @@ path = {}
 name = "{}"
 version = "0.1.0"
 authors = [{}]
-publish = {}
-
+{}
 [dependencies]
 {}"#,
             name,
             toml::Value::String(author),
             match opts.registry {
-                Some(registry) => toml::Value::Array(vec!(toml::Value::String(registry.to_string()))),
-                None => toml::Value::Boolean(true),
+                Some(registry) => {
+                    format!("publish = {}\n",
+                        toml::Value::Array(vec!(toml::Value::String(registry.to_string())))
+                    )
+                }
+                None => "".to_string(),
             }, 
             cargotoml_path_specifier
         ).as_bytes(),
